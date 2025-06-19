@@ -103,8 +103,12 @@ for stat in range(23,28):#,len(name)):
         dlistn=np.sort(dlistn).tolist()
 
         def selimage(nday):
-            image=ee.ImageCollection(product1).filterDate(ee.Date(nday),ee.Date(ee.Number(nday).add(86400000))).filterBounds(region).select(band).first()#.reduce(ee.Reducer.mean()).rename(band[0]).reproject(crs_mod,trans_mod)
-            image2=ee.ImageCollection(product2).filterDate(ee.Date(nday),ee.Date(ee.Number(nday).add(86400000))).filterBounds(region).select(maskband).first()#.reduce(ee.Reducer.mean()).rename(maskband).reproject(crs_mod,trans_mod)
+            image=ee.ImageCollection(product1).filterDate(ee.Date(nday),ee.Date(ee.Number(nday).add(86400000))).filterBounds(region).select(band).first()
+            #.reduce(ee.Reducer.mean()).rename(band[0]).reproject(crs_mod,trans_mod)
+            
+            image2=ee.ImageCollection(product2).filterDate(ee.Date(nday),ee.Date(ee.Number(nday).add(86400000))).filterBounds(region).select(maskband).first()
+            #.reduce(ee.Reducer.mean()).rename(maskband).reproject(crs_mod,trans_mod)
+            
             image2=image2.bitwiseAnd((46851)).reproject(crs_mod,trans_mod)
             
             return image.updateMask(image2.gt(0).And(image2.neq(3)).Not())
@@ -115,7 +119,6 @@ for stat in range(23,28):#,len(name)):
         n=coll.size().getInfo()
         
         print('dimension postmasking:'+str(n))
-        
 
         MOD0 = np.array(ee.ImageCollection(coll.first()).select(band).getRegion(region, scale_mod).getInfo())
         #MOD=np.zeros([np.shape(MOD0)[0]-1,6,n])
