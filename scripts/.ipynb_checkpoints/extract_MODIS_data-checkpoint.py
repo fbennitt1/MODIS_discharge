@@ -22,25 +22,26 @@ import h5py
 import hdf5storage
                 
 # %% Input
-tic=time.time()
+tic = time.time()
 
-service_account = 'riverdischarge@riverdischarge1.iam.gserviceaccount.com'
+service_account = 'modis-discharge@modis-discharge.iam.gserviceaccount.com'
 credentials = ee.ServiceAccountCredentials(service_account, '/home/pfilippucci/Desktop/River_Discharge/GEE/riverdischarge1-35925bb5bef6.json')
+
 ee.Initialize(credentials)
-folderGEE='projects/riverdischarge1/assets/CCI'; #e.g.: projects/riverdischarge/assets/research
-user='paolo81990';
-folder_pc='F:/z_scambio_files/IRPI CNR Dropbox/BACKUP/CURRENT_USERS/p.filippucci/angelica/CCI_discharge'
+folderGEE = 'projects/riverdischarge1/assets/CCI'; #e.g.: projects/riverdischarge/assets/research
+user = 'paolo81990';
+folder_pc = 'F:/z_scambio_files/IRPI CNR Dropbox/BACKUP/CURRENT_USERS/p.filippucci/angelica/CCI_discharge'
 
 
-products=['MOD','MYD']
-ray=0.075
-ray0="0075"
+products = ['MOD','MYD']
+ray = 0.075
+ray0 = "0075" # NEEDED?
 
 # insert below station name, central area coordinates and river coordinates
 file=loadmat('CCI_observed_data_2ndphase.mat')
 lonlat=file['lonlat_ok']
-name=file['name']
-name_2=file['name_2']
+name=file['name'] # fixed length
+name_2=file['name_2'] # code 
 basin=file['basin']
 river=file['river']
 
@@ -81,6 +82,7 @@ for stat in range(23,28):#,len(name)):
         n=coll.size().getInfo()
         print('dimension premasking:'+str(n))
         
+        # Reduce data size
         def calc_Date(image,llist):
             value =image.get('system:time_start')
             value=ee.Number(ee.Date(ee.List([value, -9999]).reduce(ee.Reducer.firstNonNull())).millis());
@@ -89,7 +91,7 @@ for stat in range(23,28):#,len(name)):
         def selection(image):
             date =image.get('system:time_start')
             im=image.select(maskband).reproject(crs_mod,trans_mod).bitwiseAnd((46851))
-            image=image.select(band).updateMask(im.gt(0).And(im.neq(3)).And(im.neq(2)).Not())
+            image=image.select(band).updateMask(im.gt(0).And(im.neq(3)).Not())
             image=image.updateMask(image.gt(0))
             
             value=image.select(band[0]).mask().reduceRegion(**{'reducer':ee.Reducer.mean(),'geometry':region,'crs':crs_mod,'crsTransform':trans_mod,'bestEffort':True})
@@ -124,7 +126,7 @@ for stat in range(23,28):#,len(name)):
         #MOD=np.zeros([np.shape(MOD0)[0]-1,6,n])
         MOD=np.zeros([np.shape(MOD0)[0]-1,5,n])
         for i in range(n):
-            print('reading image '+str(i)+' of '+str(n))
+            print('reading image ' + str(i) + ' of ' + str(n))
             tic=time.time()
             ee.Initialize(credentials)
 
@@ -153,4 +155,5 @@ for stat in range(23,28):#,len(name)):
         matfiledata['D'] = D
         matfiledata['lonlat'] = llonlat
         savemat(prod+'_'+str2+'_data.mat', matfiledata)
-        #hdf5storage.write(matfiledata,'.',prod_name+'_'+str2+'_data.mat', matlab_compatible=True)
+        #hdf5storage.write(matfiledata,'.',
+        #prod_name+'_'+str2+'_data.mat', matlab_compatible=True)

@@ -126,7 +126,7 @@ for stat in range(23,28):#,len(name)):
         #MOD=np.zeros([np.shape(MOD0)[0]-1,6,n])
         MOD=np.zeros([np.shape(MOD0)[0]-1,5,n])
         for i in range(n):
-            print('reading image '+str(i)+' of '+str(n))
+            print('reading image ' + str(i) + ' of ' + str(n))
             tic=time.time()
             ee.Initialize(credentials)
 
@@ -155,4 +155,5 @@ for stat in range(23,28):#,len(name)):
         matfiledata['D'] = D
         matfiledata['lonlat'] = llonlat
         savemat(prod+'_'+str2+'_data.mat', matfiledata)
-        #hdf5storage.write(matfiledata,'.',prod_name+'_'+str2+'_data.mat', matlab_compatible=True)
+        #hdf5storage.write(matfiledata,'.',
+        #prod_name+'_'+str2+'_data.mat', matlab_compatible=True)
