@@ -157,3 +157,179 @@ for stat in range(23,28):#,len(name)):
         savemat(prod+'_'+str2+'_data.mat', matfiledata)
         #hdf5storage.write(matfiledata,'.',
         #prod_name+'_'+str2+'_data.mat', matlab_compatible=True)
+        
+        
+        
+        
+        
+################
+
+
+# def getImages(name, lonlat, products, ray, save_path):
+
+#     for i in range(0,1):
+
+#         coords = lonlat[i] #Central area coordinates. NB coordstat should not be taken inside river since snow period selection is calculated there
+#         years = [2000, 2021] #Calibration period (has to be < 5000 days)
+
+#         gauge_name = name[i]
+#         gauge_lon = lonlat[i][0]
+#         gauge_lat = lonlat[i][1]
+
+#         #region = ee.Geometry.Point(coordstat).buffer(ray*100000).bounds()
+#         region = ee.Geometry.Rectangle([coords[0] - ray, coords[1] - ray,
+#                                       coords[0] + ray, coords[1] + ray])
+
+#         for prod in products:
+#             product1 = 'MODIS/061/' + prod + '09GQ';
+#             product2 = 'MODIS/061/' + prod + '09GA';
+
+#             datestartCAL = ee.Date(str(years[0]) + '-01-01').millis();
+#             dateendCAL = ee.Date(str(years[-1]) + '-12-31').millis();
+
+#             band = ['sur_refl_b02', 'sur_refl_b01'];
+
+#             coll = ee.ImageCollection(product1).filterDate(datestartCAL, dateendCAL).filterBounds(region).select(band);
+#             proj = coll.first().projection();
+#             scale_mod = ee.Number(proj.nominalScale()).getInfo()
+#             trans_mod = proj.getInfo()['transform'];
+#             crs_mod = proj.getInfo()['crs'];
+
+#             maskband = 'state_1km';
+
+#             # Reduce data size
+#             def calc_Date(image, llist):
+#                 value = image.get('system:time_start')
+#                 value = ee.Number(ee.Date(ee.List([value, -9999]).\
+#                                         reduce(ee.Reducer.firstNonNull())).millis());
+#                 return ee.List(llist).add(value)
+
+#             def selection(image):
+#                 date = image.get('system:time_start')
+#                 im = image.select(maskband).reproject(crs_mod,trans_mod).bitwiseAnd((46851))
+#                 image = image.select(band).updateMask(im.gt(0).And(im.neq(3)).Not())
+#                 image = image.updateMask(image.gt(0))
+
+#                 value = image.select(band[0]).mask().reduceRegion(**{'reducer':ee.Reducer.mean(),
+#                                                                      'geometry':region,
+#                                                                      'crs':crs_mod,
+#                                                                      'crsTransform':trans_mod,
+#                                                                      'bestEffort':True})
+#                 value = ee.Number(value.get(value.keys().get(0)))
+#                 return image.set('Valid_perc',value).set('system:time_start',date)
+
+
+#             coll2 = ee.ImageCollection(product2).filterDate(datestartCAL, dateendCAL).filterBounds(region).select(maskband
+#                                                                                                                  );
+#             coll = coll.combine(coll2)
+#             n = coll.size().getInfo()
+#             print('dimension premasking: ' + str(n))
+
+#             coll0 =coll.map(selection)
+#             coll0 = coll0.filterMetadata('Valid_perc', 'not_less_than', 0.20)
+#             first = ee.List([])
+#             dlistn = ee.List(coll0.iterate(calc_Date,first)).distinct().getInfo()
+#             dlistn = np.sort(dlistn).tolist()
+
+#             def selimage(nday):
+#                 image=ee.ImageCollection(product1).filterDate(ee.Date(nday),
+#                                                               ee.Date(ee.Number(nday).add(86400000))).filterBounds(region).select(band).first()
+
+#                 image2=ee.ImageCollection(product2).filterDate(ee.Date(nday),
+#                                                                ee.Date(ee.Number(nday).add(86400000))).filterBounds(region).select(maskband).first()
+
+#                 image2=image2.bitwiseAnd((46851)).reproject(crs_mod,trans_mod)
+
+#                 return image.updateMask(image2.gt(0).And(image2.neq(3)).Not())
+
+#             coll = ee.ImageCollection(ee.List(dlistn).map(selimage))
+
+#             n = coll.size().getInfo()
+
+#             print('dimension postmasking: ' + str(n))
+
+#             # MOD0 = np.array(ee.ImageCollection(coll.first()).select(band).getRegion(region, scale_mod).getInfo())
+#             # MOD = np.zeros([np.shape(MOD0)[0]-1, 5, n])
+            
+#         def fetch_day(i_nday):
+#             i, nday = i_nday
+#             ee.Initialize(credentials)
+#             img = selimage(nday)
+#             res = ee.ImageCollection(img) \
+#                      .getRegion(region, scale_mod) \
+#                      .getInfo()
+
+#             arr = np.array(res)[1:, 1:].astype(float)
+
+#             return i, arr
+
+#             tic = time.time()
+            
+# #             region_coords = [coords[0]-ray, coords[1]-ray, coords[0]+ray, coords[1]+ray]
+            
+# #             args_list = [
+# #                 (
+# #                     i, nday, region_coords,
+# #                     product1, product2, band,
+# #                     crs_mod, trans_mod, scale_mod
+# #                 )
+# #                 for i, nday in enumerate(dlistn)
+# #             ]
+
+#             with Pool(processes=16) as pool:
+#                 results = pool.map(fetch_day, list(enumerate(dlistn)))
+                
+#             # with Pool(processes=16) as pool:
+#             #     results = pool.map(fetch_day, list(enumerate(dlistn)))
+            
+#             toc = time.time()
+#             print('That took: ' + str(toc - tic))
+            
+#             # Extract lon/lat just once
+#             llon = results[0][1][:, 0]
+#             llat = results[0][1][:, 1]
+            
+#             # Setup for reshape
+#             n_pixels = len(llon)  # 5184
+#             nx = int(math.sqrt(n_pixels))
+#             ny = nx
+
+#             assert nx * ny == n_pixels, "Grid shape mismatch"
+            
+#             # Extract time and bands
+#             ttime = np.empty(len(dlistn))
+#             surf2 = np.empty((n_pixels, len(dlistn)))
+#             surf1 = np.empty((n_pixels, len(dlistn)))
+
+#             for idx, arr in results:
+#                 ttime[idx] = arr[0, 2]
+#                 surf2[:, idx] = arr[:, 3]
+#                 surf1[:, idx] = arr[:, 4]
+
+#             # Reshape
+#             llon = llon.reshape(ny, nx)
+#             llat = llat.reshape(ny, nx)
+
+#             surf2 = surf2.reshape(ny, nx, -1)
+#             surf1 = surf1.reshape(ny, nx, -1)
+
+#             # Make DataSet
+#             ds = xr.Dataset(
+#                 data_vars={
+#                     'surf2': (('lat', 'lon', 'date'), surf2),
+#                     'surf1': (('lat', 'lon', 'date'), surf1),
+#                 },
+#                 coords={
+#                     'lon': (('lat', 'lon'), llon),
+#                     'lat': (('lat', 'lon'), llat),
+#                     'date': pd.to_datetime(ttime, unit='ms')
+#                 }
+#             )
+
+#             # Add global attributes
+#             ds.attrs['Sttn_Nm'] = gauge_name
+#             ds.attrs['Sttn_lon'] = gauge_lon
+#             ds.attrs['Sttn_lat'] = gauge_lat
+
+#             # Save as netcdf
+#             ds.to_netcdf(os.path.join(save_path, gauge_name + '_'+ prod + '.nc'))
